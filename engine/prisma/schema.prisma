@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Language {
+  CPP
+  JAVA
+  C
+  PYTHON
+}
+
+enum ExecutionStatus {
+  ACCEPTED
+  WRONG_ANSWER
+  TIME_LIMIT_EXCEEDED
+  MEMORY_LIMIT_EXCEEDED
+  COMPILATION_ERROR
+  RUNTIME_ERROR
+  SEGMENTATION_FAULT
+  OUTPUT_LIMIT_EXCEEDED
+  FLOATING_POINT_EXCEPTION
+  BUS_ERROR
+  DIVISION_BY_ZERO
+  INVALID_POINTER
+  STACK_OVERFLOW
+  ABORT_ERROR
+  LINKER_ERROR
+  CLASS_NOT_FOUND
+  NULL_POINTER_EXCEPTION
+  INDEX_OUT_OF_BOUNDS
+  ILLEGAL_ARGUMENT
+  CONCURRENT_MODIFICATION
+  CLASS_CAST_ERROR
+  SYNTAX_ERROR
+  INDENTATION_ERROR
+  TYPE_ERROR
+  VALUE_ERROR
+  INDEX_ERROR
+  KEY_ERROR
+  NAME_ERROR
+  ATTRIBUTE_ERROR
+  IMPORT_ERROR
+  RECURSION_ERROR
+  REFERENCE_ERROR
+  RANGE_ERROR
+  EVAL_ERROR
+  URI_ERROR
+  AGGREGATE_ERROR
+  INTERNAL_ERROR
+  MODULE_NOT_FOUND
+}
+
+model Execution {
+  token         String           @id @default(uuid())
+  code          String
+  language      Language
+  stdin         String?
+  stdout        String?
+  stderr        String?
+  compilation_output String?
+  status        ExecutionStatus
+  created_at    DateTime         @default(now())
+  updated_at    DateTime         @updatedAt
+  memory_used   Float?           @default(0)
+  time_taken    Float?           @default(0) 
+}
