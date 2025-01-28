@@ -6,13 +6,14 @@ import Docker from 'dockerode';
 
 const docker = new Docker({socketPath: '/var/run/docker.sock'});
 docker.ping().then(()=>{
-    console.log("Docker is running");
+    console.log("Smoothie connected to docker daemon");
 }).catch((err)=>{
-    console.log("Docker is not running");
-    console.log(err);
+    console.log("Error connecting to docker: ",err);
+    console.log("Exiting...");
+    process.exit(1);
 });
 export {docker};
 
 app.listen(process.env.PORT,()=>{
-    console.log(`Server is running on port ${process.env.PORT}`);
+    console.log(`Code Smoothie Server is running on port ${process.env.PORT}`);
 })

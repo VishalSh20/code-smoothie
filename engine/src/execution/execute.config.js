@@ -37,7 +37,7 @@ export const languageConfigs = {
     },
   },
   java: {
-    image: "openjdk:latest",
+    image: "openjdk:slim",
     fileName: "Main.java",
     compileCmd: (fileName) => `javac ${fileName} 2>compilation_error.log`,
     runCmd: `java Main < input.txt > stdout.log 2> stderr.log`,
@@ -56,7 +56,7 @@ export const languageConfigs = {
     },
   },
   python: {
-    image: "python:latest",
+    image: "python:slim",
     fileName: "main.py",
     compileCmd: () => "",
     runCmd: `python main.py < input.txt > stdout.log 2> stderr.log`,
@@ -64,12 +64,12 @@ export const languageConfigs = {
     errorParser: (stderr) => {
       if (/syntax error|SyntaxError/i.test(stderr)) return "SYNTAX_ERROR";
       if (/indentation error|IndentationError|TabError/i.test(stderr)) return "SYNTAX_ERROR";
+      if (/zero division|ZeroDivisionError/i.test(stderr)) return "RUNTIME_ERROR_SIGFPE";
       if (/type error|TypeError/i.test(stderr)) return "RUNTIME_ERROR_OTHER";
       if (/value error|ValueError/i.test(stderr)) return "RUNTIME_ERROR_OTHER";
       if (/index error|IndexError/i.test(stderr)) return "RUNTIME_ERROR_OTHER";
       if (/key error|KeyError/i.test(stderr)) return "RUNTIME_ERROR_OTHER";
       if (/memory error|MemoryError/i.test(stderr)) return "MEMORY_LIMIT_EXCEEDED";
-      if (/zero division|ZeroDivisionError/i.test(stderr)) return "RUNTIME_ERROR_SIGFPE";
       if (/name error|NameError|UnboundLocalError/i.test(stderr)) return "RUNTIME_ERROR_OTHER";
       if (/attribute error|AttributeError/i.test(stderr)) return "RUNTIME_ERROR_OTHER";
       if (/import error|ImportError|ModuleNotFoundError/i.test(stderr)) return "RUNTIME_ERROR_OTHER";
@@ -78,7 +78,7 @@ export const languageConfigs = {
     },
   },
   javascript: {
-    image: "node:latest",
+    image: "node:slim",
     fileName: "main.js",
     compileCmd: () => "",
     runCmd: `node main.js < input.txt > stdout.log 2> stderr.log`,
