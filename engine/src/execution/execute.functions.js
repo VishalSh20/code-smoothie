@@ -1,28 +1,28 @@
 import { languageConfigs } from "./execute.config.js";
-import Docker from 'dockerode';
 import fs from "fs";
 import path from "path";
-const docker = new Docker();
+import Docker from 'dockerode';
+const docker = new Docker({socketPath: '/var/run/docker.sock'});
 
 export default async function runCode(executionInput, base64Encoded=false) {
-  const {code, language, stdin="", timeLimit=60, memoryLimit=256, cpuCoreLimit=1, expectedOutput=null} = executionInput
+  console.log("Got execution input, ",executionInput);
+  const {code, language, stdin="", timeLimit, memoryLimit, cpuCoreLimit, expectedOutput=null} = executionInput;
+
   let status = "", error = null;
   let executionData = {};
   const config = languageConfigs[language];
   const encoding = base64Encoded ? "base64" : "utf-8";
-  const SRC_PATH = path.join(process.cwd(), "execution-process");
+  const SRC_PATH = path.join("/tmp","smoothie",Date.now().toString());
   fs.mkdirSync(SRC_PATH, { recursive: true });
   try {  
-  //   store the code in a file 
     fs.writeFileSync(path.join(SRC_PATH,config.fileName), code);
     fs.writeFileSync(path.join(SRC_PATH,"input.txt"), stdin);
-    fs.writeFileSync(path.join(SRC_PATH,"compilation_error.log"), "");
     fs.writeFileSync(path.join(SRC_PATH,"stdout.log"), "");
     fs.writeFileSync(path.join(SRC_PATH,"stderr.log"), "");
-  
+    fs.writeFileSync(path.join(SRC_PATH,"compilation_error.log"), "");
     // If compilation is required, compile the code
     if (config.needsCompilation) {
-      const compileResult = await compileCode(config, SRC_PATH);
+      const compileResult = await compileCode(config,SRC_PATH);
       if(!compileResult.success){
         status = compileResult.error.type;
         error = status==='COMPILATION_ERROR' ? null: compileResult.error.message;
@@ -54,7 +54,7 @@ export default async function runCode(executionInput, base64Encoded=false) {
     const {stdout,stderr, compilation_error} = readFileOutputs(SRC_PATH, encoding);
     fs.rmSync(SRC_PATH, { recursive: true, force: true });
     return {
-      status,
+      status:status,
       error,
       stdout,
       stderr,
@@ -64,17 +64,17 @@ export default async function runCode(executionInput, base64Encoded=false) {
   }
 
 }
-const compileCode = async (config, SRC_PATH) => {
+const compileCode = async (config,SRC_PATH) => {
     try {
       const container = await docker.createContainer({
           Image: config.image,
           Cmd: ['sh','-c',config.compileCmd(config.fileName)],
           WorkingDir: "/app",
           HostConfig: {
-              Binds: [
-                `${SRC_PATH}:/app`,     
-              ],
-              AutoRemove: true,
+           Binds:[
+              `${SRC_PATH}:/app`
+           ]
+              // AutoRemove: true,
             }
         });
         await container.start();
@@ -82,6 +82,8 @@ const compileCode = async (config, SRC_PATH) => {
   
       const exitData = await container.wait();
       const exitCode = exitData.StatusCode;
+      const errLog = await container.logs({ stdout: false, stderr: true });
+      console.log(errLog.toString());
   
       if (exitCode === 0) {
         console.log('Compilation succeeded! Binary saved ');
@@ -118,9 +120,9 @@ const executeCode = async (config, SRC_PATH, timeLimit, memoryLimit,cpuCoreLimit
           Cmd: ['sh','-c',config.runCmd],
           WorkingDir: "/app",
           HostConfig: {
-              Binds: [
-                `${SRC_PATH}:/app/`,     // Mount source file
-              ],
+            Binds:[
+              `${SRC_PATH}:/app`
+           ],
               Memory: memoryLimit*1024*1024, 
               MemorySwap: memoryLimit*1024*1024*2,
               CpuPeriod: 100000,

@@ -1,11 +1,13 @@
 {
   "dependencies": {
     "@prisma/client": "^6.2.1",
+    "bull": "^4.16.5",
     "cors": "^2.8.5",
     "dockerode": "^4.0.4",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "tar-fs": "^3.0.8"
+    "tar-fs": "^3.0.8",
+    "uuid": "^11.0.5"
   },
   "type": "module",
   "devDependencies": {
