@@ -15,11 +15,17 @@ docker pull node:slim || { echo "Failed to pull node:slim"; exit 1; }
 # Load environment variables
 echo "Loading configuration..."
 if [ -f ".config" ]; then
+    set -a
     source .config
+    set +a
 else
     echo "Error: .config file not found!"
     exit 1
 fi
+
+#set up prisma 
+npx prisma generate || { echo "Failed to generate schema"; exit 1; }
+npx prisma db push || { echo "Failed to push schema to db"; exit 1; }
 
 # Install dependencies
 echo "Installing npm dependencies..."

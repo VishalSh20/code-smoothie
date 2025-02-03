@@ -1,5 +1,6 @@
 import { config } from "dotenv";
 config({path: ".config"});
+
 import Queue from "bull";
 import runCode from "./execute.functions.js";
 import prisma from "../../prisma/client.js";

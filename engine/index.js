@@ -14,6 +14,12 @@ docker.ping().then(()=>{
 });
 export {docker};
 
-app.listen(process.env.PORT,()=>{
+app.listen(process.env.PORT, () => {
     console.log(`Code Smoothie Server is running on port ${process.env.PORT}`);
-})
+}).on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        app.listen(5000, () => {
+            console.log(`Code Smoothie Server is running on port 5000`);
+        });
+    }
+});

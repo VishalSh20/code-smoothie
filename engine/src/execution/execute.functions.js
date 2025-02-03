@@ -110,90 +110,107 @@ const compileCode = async (config,SRC_PATH) => {
     }
 }
 
-const executeCode = async (config, SRC_PATH, timeLimit, memoryLimit,cpuCoreLimit) => {
-    console.log('Executing code...');
-    console.log('src path is:',SRC_PATH);
+const executeCode = async (config, SRC_PATH, timeLimit, memoryLimit, cpuCoreLimit) => {
+  console.log('Executing code...');
+  console.log('src path is:', SRC_PATH);
 
-    try {
+  try {
       const container = await docker.createContainer({
-          Image:config.image,
-          Cmd: ['sh','-c',config.runCmd],
+          Image: config.image,
+          Cmd: ['sh', '-c', config.runCmd],
           WorkingDir: "/app",
           HostConfig: {
-            Binds:[
-              `${SRC_PATH}:/app`
-           ],
-              Memory: memoryLimit*1024*1024, 
-              MemorySwap: memoryLimit*1024*1024*2,
+              Binds: [
+                  `${SRC_PATH}:/app`
+              ],
+              Memory: memoryLimit * 1024 * 1024,
+              MemorySwap: memoryLimit * 1024 * 1024 * 2,
               CpuPeriod: 100000,
-              CpuQuota: cpuCoreLimit*100000,
-            }
-        });
-        await container.start();
-        const startTime = Date.now();
+              CpuQuota: cpuCoreLimit * 100000,
+          }
+      });
+      await container.start();
+      const startTime = Date.now();
 
-        let timeOutId;
-        let timeoutKill = false;
-        if (timeLimit > 0) {
+      let timeOutId;
+      let timeoutKill = false;
+      if (timeLimit > 0) {
           timeOutId = setTimeout(async () => {
               console.log('Time limit exceeded. Killing container...');
-              await container.stop(); 
+              await container.stop();
               timeoutKill = true;
           }, timeLimit * 1000);
-       }
+      }
 
-        const exitData = await container.wait();
-        const exitCode = exitData.StatusCode;
-        const endTime = Date.now();
-        const executionTime = (endTime - startTime);
-        if(timeOutId) clearTimeout(timeOutId);
-        console.log('Execution status:', exitCode);
-        
-        const stderr = fs.readFileSync(path.join(SRC_PATH,"stderr.log"), 'utf-8');
-        if (stderr) {
+      // Track max memory usage
+      let maxMemoryUsed = 0;
+      const statsStream = await container.stats({ stream: true });
+      statsStream.on('data', (chunk) => {
+          const stats = JSON.parse(chunk.toString());
+          console.log("stats",stats);
+          const memoryUsed = stats.memory_stats.usage;
+          maxMemoryUsed = Math.max(maxMemoryUsed, memoryUsed);
+      });
+
+      const exitData = await container.wait();
+      const exitCode = exitData.StatusCode;
+      const endTime = Date.now();
+      const executionTime = (endTime - startTime);
+      
+      // Stop collecting stats
+      statsStream.destroy();
+      
+      if (timeOutId) clearTimeout(timeOutId);
+      console.log('Execution status:', exitCode);
+
+      const stderr = fs.readFileSync(path.join(SRC_PATH, "stderr.log"), 'utf-8');
+      if (stderr) {
           console.log('Execution Error:', stderr);
-        }
-        let errorType, errorMessage;
-        if(timeoutKill){
+      }
+      
+      let errorType, errorMessage;
+      if (timeoutKill) {
           errorType = "TIME_LIMIT_EXCEEDED";
           errorMessage = "Execution timed out!";
-        }
-        else if(stderr){
+      }
+      else if (stderr) {
           errorType = config.errorParser(stderr);
-          errorMessage = "Execution failed due to error: "+errorType;
-        }
-        else{
+          errorMessage = "Execution failed due to error: " + errorType;
+      }
+      else {
           console.log('Execution succeeded!');
           return {
               success: true,
               error: null,
               data: {
-                  time_taken: executionTime
+                  time_taken: executionTime,
+                  memory_used: Math.round(maxMemoryUsed / (1024 * 1024)) // Convert to MB
               },
           };
-        }
+      }
 
-        console.error(`Execution failed. Error: ${errorMessage}`);
-        return {
-            success: false,
-            data: {
-                time_taken: executionTime
-            },
-            error: {
-                type: errorType,
-                message: errorMessage,
-            },
-        };
-    } catch (error) {
+      console.error(`Execution failed. Error: ${errorMessage}`);
+      return {
+          success: false,
+          data: {
+              time_taken: executionTime,
+              memory_used: Math.round(maxMemoryUsed / (1024 * 1024)) // Convert to MB
+          },
+          error: {
+              type: errorType,
+              message: errorMessage,
+          },
+      };
+  } catch (error) {
       console.error('Error during execution:', error);
       return {
-        success:false,
-        error:{
-          type:"INTERNAL_ERROR",
-          message:"Error during execution: "+error.message
-        }
+          success: false,
+          error: {
+              type: "INTERNAL_ERROR",
+              message: "Error during execution: " + error.message
+          }
       }
-    }
+  }
 }
 
 function readFileOutputs(SRC_PATH, encoding){

@@ -1,6 +1,6 @@
 # Code Smoothie
 
-Code Smoothie is a Node.js-based code execution engine that leverages Docker (via Dockerode) to execute code in a secure and isolated environment. It supports multiple languages, including C, C++, Java, Python, and JavaScript, and ensures seamless error detection and parsing. Ideal for online judge systems or coding platforms.
+Code Smoothie is a Node.js-based code execution engine that leverages Docker (via Dockerode) to execute code in a secure and isolated environment. It supports multiple languages, including C, C++, Java, Python, and JavaScript, and ensures seamless error detection and parsing. Ideal for online judge systems or coding platforms. It is currently checked on linux only.
 
 ## Features
 - Language support: C, C++, Java, Python, and JavaScript.
@@ -14,7 +14,6 @@ Follow the steps below to set up and run Code Smoothie:
 ### Prerequisites
 1. **Docker**
    - Install Docker by following the official guide: [Install Docker](https://docs.docker.com/get-docker/).
-   - If you are on Linux:
      - Add your user to the Docker group to run Docker without `sudo`:
        ```bash
        sudo usermod -aG docker $USER
@@ -32,6 +31,7 @@ Follow the steps below to set up and run Code Smoothie:
      -e POSTGRES_USER=postgres \
      -e POSTGRES_PASSWORD=password \
      -e POSTGRES_DB \
+     -v /path-to-data:/var/lib/postgresql/data \
      -p 5432:5432 postgres:latest
      ```
 
@@ -40,28 +40,6 @@ Follow the steps below to set up and run Code Smoothie:
 git clone https://github.com/VishalSh20/code-smoothie.git
 cd code-smoothie
 ```
-
-### Configuration
-1. Set up the `.config` file for application settings:
-   ```bash
-   cat .config
-   ```
-2. Set config as environment variable source:
-   ```bash
-   source .config
-   ```
-
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-4. Configure PostgreSQL with Prisma:
-   ```bash
-   export DATABASE_URL="postgresql://postgres:password@localhost:5432/postgres?schema=public"
-   npx prisma generate
-   npx prisma db push
-   ```
 
 ### Start the Engine
 1. Navigate to the engine directory:
