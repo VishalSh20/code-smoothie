@@ -23,7 +23,7 @@ else
     exit 1
 fi
 
-#set up prisma 
+# Set up prisma
 npx prisma generate || { echo "Failed to generate schema"; exit 1; }
 npx prisma db push || { echo "Failed to push schema to db"; exit 1; }
 
@@ -31,10 +31,10 @@ npx prisma db push || { echo "Failed to push schema to db"; exit 1; }
 echo "Installing npm dependencies..."
 npm install || { echo "Failed to install dependencies"; exit 1; }
 
-# Start the application in detached mode
-echo "Starting the engine in detached mode..."
-npm run start &
-ENGINE_PID=$!
+# Start the application with pm2
+echo "Starting the engine with pm2..."
 
-# Save the process ID of the detached process
-echo $ENGINE_PID > engine.pid
+npx pm2 start npm --name "code-smoothie-engine" -- run start
+npx pm2 save
+
+echo "Code-Smoothie engine is up and running under pm2!"
