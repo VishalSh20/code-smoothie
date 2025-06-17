@@ -38,4 +38,3 @@ ENGINE_PID=$!
 
 # Save the process ID of the detached process
 echo $ENGINE_PID > engine.pid
-
